@@ -30,7 +30,7 @@ fun start(temp,stack) = let
                              val char = Option.getOpt(option,#"%") 
                             in 
                             case char of 
-                                #"#" => temp1(push(char,temp), stack)    
+                                #"#" => temp1(temp, stack)    
                             |   #"\n" => start(temp,stack)   
                             |   _ =>  if head(stack) = "<p>" then para_text(push(char,temp), stack) 
                                       else let  val o1 = write("<p>") in para_text(push(char,temp), push("<p>",stack)) end 
@@ -42,39 +42,41 @@ and temp1 (temp, stack) = let
                     val option = TextIO.input1(new_input) ;
                     val test = Option.isSome(option) ; 
                 in 
-                    if (not test) then let 
-                                            val text = implode(rev(temp)) 
-                                            val o3 = helper2(temp, stack)
-                                            val o1 = write(text)  
-                                             
-                                            val o2 = write("</p>\n")
-                                            in () 
-                                        end   
+                    if (not test) then let val output = write "<h1></h1>" 
+                                        in () 
+                                      end 
+                                           
                     else 
                         let 
                             val char = Option.getOpt(option, #"%") 
                         in 
                         case char of 
-                            #" " => if head(stack) = "<p>" then 
+                            (* #" " => if head(stack) = "<p>" then 
                                                         let val o1 = write "</p>\n" in  
                                                         h1([], "<h1>" :: pop(stack))
                                                         end 
                                      else 
                                         let val o1 = write "" in 
                                         h1([], "<h1>" :: pop(stack))
-                                        end 
+                                        end  *)
                                          
                                          
                                       
-                        |   #"#" => temp2(push(#"#",temp), stack) 
+                           #"#" => temp2(temp, stack) 
                         |   #"\n" => (let 
                                         val output = write "<h1></h1>" 
                                       in 
                                         start(temp, stack) 
                                     end ) 
-                        |   _ => helper(char, temp, stack) 
+                        |   _ => if head(stack) = "<p>" then 
+                                                                     let val o1 = write("</p>\n") 
+                                                                         val o2 = write("<h1>") 
+                                                                         in header_text(char :: temp, push("<h1>",pop(stack)),1)
+                                                                          end  
+                                              else let val o2 = write("<h1>") in header_text(char::temp, push("<h1>", stack), 1) end 
                         end 
                 end 
+
 (* if stack empty or head not <p> then only <p> written  *)
 and helper2(temp,stack as head :: tl) = ( if head <> "<p>" then write "<p>"   
                             else write ""   
@@ -97,40 +99,30 @@ and temp2 (temp, stack) = let
                     val option = TextIO.input1(new_input) ;
                     val test = Option.isSome(option) ; 
                 in 
-                    if (not test) then let 
-                                            val text = implode(rev(temp)) 
-                                            val o3 = helper2(temp, stack)
-                                            val o1 = write(text)  
-                                             
-                                            val o2 = write("</p>\n")
-                                            in () 
-                                        end   
+                    if (not test) then let val output = write "<h2></h2>" 
+                                        in () 
+                                      end 
+                                           
                     else 
                         let 
                             val char = Option.getOpt(option, #"%") 
                         in 
                         case char of 
-                            #" " => if head(stack) = "<p>" then 
-                                                        let val o1 = write "</p>\n" in  
-                                                        h2([], "<h2>" :: pop(stack))
-                                                        end 
-                                     else 
-                                        let val o1 = write "" in 
-                                        h2([], "<h2>" :: pop(stack))
-                                        end 
-                                         
-                                         
                                       
-                        |   #"#" => temp3(push(#"#",temp), stack) 
+                           #"#" => temp3(temp, stack) 
                         |   #"\n" => (let 
                                         val output = write "<h2></h2>" 
                                       in 
                                         start(temp, stack) 
                                     end ) 
-                        |   _ => helper(char, temp, stack) 
+                        |   _ => if head(stack) = "<p>" then 
+                                                                     let val o1 = write("</p>\n") 
+                                                                         val o2 = write("<h2>") 
+                                                                         in header_text(char :: temp, push("<h2>",pop(stack)),2)
+                                                                          end  
+                                              else let val o2 = write("<h2>") in header_text(char::temp, push("<h2>", stack), 2) end 
                         end 
                 end 
-
 and h2(temp,stack) =   let 
                               
                              val o1 = write("<h2>") 
@@ -141,37 +133,29 @@ and temp3 (temp, stack) = let
                     val option = TextIO.input1(new_input) ;
                     val test = Option.isSome(option) ; 
                 in 
-                    if (not test) then let 
-                                            val text = implode(rev(temp)) 
-                                            val o3 = helper2(temp, stack)
-                                            val o1 = write(text)  
-                                             
-                                            val o2 = write("</p>\n")
-                                            in () 
-                                        end   
+                    if (not test) then let val output = write "<h3></h3>" 
+                                        in () 
+                                      end 
+                                           
                     else 
                         let 
                             val char = Option.getOpt(option, #"%") 
                         in 
                         case char of 
-                            #" " => if head(stack) = "<p>" then 
-                                                        let val o1 = write "</p>\n" in  
-                                                        h3([], "<h3>" :: pop(stack))
-                                                        end 
-                                     else 
-                                        let val o1 = write "" in 
-                                        h3([], "<h3>" :: pop(stack))
-                                        end 
-                                         
-                                         
+                            
                                       
-                        |   #"#" => temp4(push(#"#",temp), stack) 
+                           #"#" => temp4(temp, stack) 
                         |   #"\n" => (let 
                                         val output = write "<h3></h3>" 
                                       in 
                                         start(temp, stack) 
                                     end ) 
-                        |   _ => helper(char, temp, stack) 
+                        |   _ => if head(stack) = "<p>" then 
+                                                                     let val o1 = write("</p>\n") 
+                                                                         val o2 = write("<h3>") 
+                                                                         in header_text(char :: temp, push("<h3>",pop(stack)),3)
+                                                                          end  
+                                              else let val o2 = write("<h3>") in header_text(char::temp, push("<h3>", stack), 3) end 
                         end 
                 end 
 
@@ -185,40 +169,30 @@ and temp4 (temp, stack) = let
                     val option = TextIO.input1(new_input) ;
                     val test = Option.isSome(option) ; 
                 in 
-                    if (not test) then let 
-                                            val text = implode(rev(temp)) 
-                                            val o3 = helper2(temp, stack)
-                                            val o1 = write(text)  
-                                             
-                                            val o2 = write("</p>\n")
-                                            in () 
-                                        end   
+                    if (not test) then let val output = write "<h4></h4>" 
+                                        in () 
+                                      end 
+                                           
                     else 
                         let 
                             val char = Option.getOpt(option, #"%") 
                         in 
                         case char of 
-                            #" " => if head(stack) = "<p>" then 
-                                                        let val o1 = write "</p>\n" in  
-                                                        h4([], "<h4>" :: pop(stack))
-                                                        end 
-                                     else 
-                                        let val o1 = write "" in 
-                                        h4([], "<h4>" :: pop(stack))
-                                        end 
-                                         
-                                         
-                                      
-                        |   #"#" => temp5(push(#"#",temp), stack) 
+                       
+                           #"#" => temp5(temp, stack) 
                         |   #"\n" => (let 
                                         val output = write "<h4></h4>" 
                                       in 
                                         start(temp, stack) 
                                     end ) 
-                        |   _ => helper(char, temp, stack) 
+                        |   _ => if head(stack) = "<p>" then 
+                                                                     let val o1 = write("</p>\n") 
+                                                                         val o2 = write("<h4>") 
+                                                                         in header_text(char :: temp, push("<h4>",pop(stack)),4)
+                                                                          end  
+                                              else let val o2 = write("<h4>") in header_text(char::temp, push("<h4>", stack), 4) end 
                         end 
                 end 
-
 
 and h4(temp,stack) =  let 
                               
@@ -230,37 +204,28 @@ and temp5 (temp, stack) = let
                     val option = TextIO.input1(new_input) ;
                     val test = Option.isSome(option) ; 
                 in 
-                    if (not test) then let 
-                                            val text = implode(rev(temp)) 
-                                            val o3 = helper2(temp, stack)
-                                            val o1 = write(text)  
-                                             
-                                            val o2 = write("</p>\n")
-                                            in () 
-                                        end   
+                    if (not test) then let val output = write "<h5></h5>" 
+                                        in () 
+                                      end 
+                                           
                     else 
                         let 
                             val char = Option.getOpt(option, #"%") 
                         in 
                         case char of 
-                            #" " => if head(stack) = "<p>" then 
-                                                        let val o1 = write "</p>\n" in  
-                                                        h5([], "<h5>" :: pop(stack))
-                                                        end 
-                                     else 
-                                        let val o1 = write "" in 
-                                        h1([], "<h5>" :: pop(stack))
-                                        end 
-                                         
-                                         
-                                      
-                        |   #"#" => temp6(push(#"#",temp), stack) 
+                          
+                           #"#" => temp6(temp, stack) 
                         |   #"\n" => (let 
                                         val output = write "<h5></h5>" 
                                       in 
                                         start(temp, stack) 
                                     end ) 
-                        |   _ => helper(char, temp, stack) 
+                        |   _ => if head(stack) = "<p>" then 
+                                                                     let val o1 = write("</p>\n") 
+                                                                         val o2 = write("<h5>") 
+                                                                         in header_text(char :: temp, push("<h5>",pop(stack)),5)
+                                                                          end  
+                                              else let val o2 = write("<h5>") in header_text(char::temp, push("<h5>", stack), 5) end 
                         end 
                 end 
 
@@ -274,40 +239,34 @@ and temp6 (temp, stack) = let
                     val option = TextIO.input1(new_input) ;
                     val test = Option.isSome(option) ; 
                 in 
-                    if (not test) then let 
-                                            val text = implode(rev(temp)) 
-                                            val o3 = helper2(temp, stack)
-                                            val o1 = write(text)  
-                                             
-                                            val o2 = write("</p>\n")
-                                            in () 
-                                        end   
+                    if (not test) then let val output = write "<h6></h6>" 
+                                        in () 
+                                      end 
+                                           
                     else 
                         let 
                             val char = Option.getOpt(option, #"%") 
                         in 
                         case char of 
-                            #" " => if head(stack) = "<p>" then 
-                                                        let val o1 = write "</p>\n" in  
-                                                        h6([], "<h6>" :: pop(stack))
-                                                        end 
-                                     else 
-                                        let val o1 = write "" in 
-                                        h6([], "<h6>" :: pop(stack))
-                                        end 
-                                         
-                                         
+                        
                                       
-                        (* |   #"#" => temp2(push(#"#",temp), stack)  *)
+                           #"#" => (let 
+                                    val o1 = write("<p>") 
+                                    in para_text(rev([#"#",#"#",#"#",#"#",#"#",#"#",#"#"] @ rev(temp)), push("<p>", stack))
+                                    end )  
                         |   #"\n" => (let 
                                         val output = write "<h6></h6>" 
                                       in 
                                         start(temp, stack) 
                                     end ) 
-                        |   _ => helper(char, temp, stack) 
+                        |   _ => if head(stack) = "<p>" then 
+                                                                     let val o1 = write("</p>\n") 
+                                                                         val o2 = write("<h6>") 
+                                                                         in header_text(char :: temp, push("<h6>",pop(stack)),6)
+                                                                          end  
+                                              else let val o2 = write("<h6>") in header_text(char::temp, push("<h6>", stack), 6) end 
                         end 
                 end 
-
 
 and h6(temp,stack) =  let 
                               
@@ -316,6 +275,7 @@ and h6(temp,stack) =  let
                             header_text(temp, stack,6)  
                       end
 
+(* assumes that <h1> has been written *)
 and header_text(temp,stack as head :: tl,count) = let val option = TextIO.input1(new_input) ;
                                         val test = Option.isSome(option) ; 
                                     in 
