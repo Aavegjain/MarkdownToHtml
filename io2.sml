@@ -6,6 +6,7 @@ exception underline_error
 exception heading_in_asterisk_error
 exception heading_in_underline_error
 exception asterisk_inside_underline_error
+exception list_error 
 (* fun start : (char List , string List) => unit ;  *)
 fun rev_helper (nil , l2) = l2 | rev_helper (h :: tl , l2) = rev_helper( tl , h :: l2) ; 
 fun head(nil) = "" | head(x :: tl) = x 
@@ -37,7 +38,56 @@ fun start(temp,stack) =
 and start_helper(temp,stack, char) = 
  
             case char of 
-                #"#" => (let val h = head(stack) in 
+               
+                 #"*" => (let val h = head(stack) in 
+                                if (h <> "<p>") then let val o2 = write("<p>") ; val o1 = write(implode(rev(temp))) 
+                                                    in em_opening_check([],push("<p>",stack),[]) 
+                                                    end 
+                                else let val o1 = write(implode(rev(temp))) ; 
+                                     in em_opening_check([],stack,[])
+                                     end 
+                            end)
+                | #"_" => (let val h = head(stack) in 
+                                if (h <> "<p>") then let val o2 = write("<p>") ; val o1 = write(implode(rev(temp))) ; val o3 = write("<u>"); 
+                                                    in underline([],"<u>" :: "<p>" :: stack,[]) 
+                                                    end 
+                                else let val o1 = write(implode(rev(temp))) ; val o3 = write("<u>");
+                                     in underline([],"<u>" ::stack,[])
+                                     end 
+                            end)
+                
+                |    #"\n" => newline_starting_tags(char::temp,stack,false) 
+                
+                (* (let val h = List.hd(temp) in 
+                          if h = #"\n" then 
+                                              if head(stack) = "<p>" then  
+                                                                            let val o2 = write(implode(rev(temp))) ; 
+                                                                            val o1 = write("</p>\n")
+                                                                            in newline([],pop(stack))
+                                                                            end 
+                                              else newline(temp,pop(stack))  
+                          else  
+                             start(char :: temp,stack)end 
+                          handle Empty => start(char :: temp, stack))  *)
+           |    _ => (let val h = head(stack)
+                      in  if(h <> "<p>" orelse h = "")then 
+                                                                let val o1 = write("<p>") 
+                                                                in start(char::temp,push("<p>",stack))
+                                                                end 
+                          else start(char :: temp,stack)
+                      end)  
+              
+(* occured denotes that a blank line has occured *)
+and newline_starting_tags(temp,stack,occured) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then (if head(stack) = "<p>" then let val o2 = write(implode(rev(temp))) 
+                                                            val o1 = write("</p>\n") in () end 
+                            else ())  
+        else  
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #"#" => (let val h = head(stack) in 
                             if (h = "<p>") then 
                                                   let val o1 = write(implode(rev(temp))) ;   
                                                   val o1 = write("</p>\n") 
@@ -62,26 +112,30 @@ and start_helper(temp,stack, char) =
                                      in underline([],"<u>" ::stack,[])
                                      end 
                             end)
-                |    #"\n" => (let val h = List.hd(temp) in 
-                          if h = #"\n" then 
-                                              if head(stack) = "<p>" then  
+                | #"-" => (let val h = head(stack) in 
+                                if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   
+                                                    in unordered_list_check([],pop(stack)) 
+                                                    end 
+                                else unordered_list_check([],stack) 
+                            end)
+                | #"\n" => if (occured = true) then newline_starting_tags(temp,stack,occured)  
+                            else newline_starting_tags(temp,stack,true) 
+                | _ => if (occured = true) then (if head(stack) = "<p>" then  
                                                                             let val o2 = write(implode(rev(temp))) ; 
                                                                             val o1 = write("</p>\n")
-                                                                            in newline([],pop(stack))
+                                                                            in newline_starting_tags(char::nil,pop(stack),false)
                                                                             end 
-                                              else newline(temp,pop(stack))  
-                          else  
-                             start(char :: temp,stack) 
-                          end 
-                          handle Empty => start(char :: temp, stack)) 
-           |    _ => (let val h = head(stack)
-                      in  if(h <> "<p>" orelse h = "")then 
-                                                                let val o1 = write("<p>") 
-                                                                in start(char::temp,push("<p>",stack))
-                                                                end 
-                          else start(char :: temp,stack)
-                      end)  
-              
+                                                    else 
+                                                        let val o3 = write("<p>") 
+                                                            val o2 = write(implode(rev(temp))) ; 
+                                                            val o1 = write("</p>\n")
+                                                            in newline_starting_tags(char::nil,push("<p>",stack),false)
+                                                            end )
+                        else start(char::temp,stack) 
+            end 
+    end    
+
+
 (* written denotes whether openign tag has been written *)
 and heading(temp, stack, level, written) =  let 
                                     val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
@@ -115,7 +169,7 @@ and heading(temp, stack, level, written) =  let
                                                     
                                                     val o2 = write(implode(rev(temp))) 
                                                     val o1 = write(getheading(2,level)) 
-                                                in start([], pop(stack))
+                                                in start_helper([], pop(stack),#"\n") 
                                                 end ) 
                                         | _ => (if written = false then 
                                                     let 
@@ -259,6 +313,19 @@ and strong_closing(temp, stack,actual) = let
             (* | #"_" =>(let  val o2 = write(implode(rev(actual))) ; val o3 = write("</strong>") ; val o1 = "<u>"; 
                     in underline([],push("<u>",pop(stack)) , []) end )  *)
 
+            | #"\n" => (let val callee = head(tl(stack)) ; val o2 = write(implode(rev(actual))) ; val o3 = write("</strong>") 
+                    in case callee of 
+                       "<h1>" => let val o1 = write(getheading(2,1)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |  "<h2>" => let val o1 = write(getheading(2,2)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h3>" => let val o1 = write(getheading(2,3)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h4>" => let val o1 = write(getheading(2,4)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h5>" => let val o1 = write(getheading(2,5)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h6>" => let val o1 = write(getheading(2,6)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+
+                    | "<em>" => em_opening(temp,pop(stack),char :: nil) 
+                    | "<u>" => (if char = #"_" then underline([],pop(stack),#" "::nil) 
+                                else underline([],pop(stack),char::nil)) 
+                    | _ => start_helper(temp, pop(stack),char) end )
             | _ => (let val callee = head(tl(stack)) ; val o2 = write(implode(rev(actual))) ; val o3 = write("</strong>") 
                     in case callee of 
                        "<h1>" => heading(char::nil,pop(stack),1,true) | "<h2>" => heading(char::nil,pop(stack),2,true) |"<h3>" => heading(char::nil,pop(stack),3,true) 
@@ -331,7 +398,19 @@ and em_closing_check(temp,stack,actual) = let
             | #"#" => raise heading_in_asterisk_error
              (* | #"_" =>(let  val o2 = write(implode(rev(actual))) ; val o3 = write("</em>") ; val o1 = "<u>"; 
                     in underline([],push("<u>",pop(stack)) , []) end )  *)
+            | #"\n" => (let val callee = head(tl(stack)) ; val o2 = write(implode(rev(actual))) ; val o3 = write("</em>") 
+                    in case callee of 
+                       "<h1>" => let val o1 = write(getheading(2,1)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |  "<h2>" => let val o1 = write(getheading(2,2)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h3>" => let val o1 = write(getheading(2,3)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h4>" => let val o1 = write(getheading(2,4)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h5>" => let val o1 = write(getheading(2,5)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
+                    |   "<h6>" => let val o1 = write(getheading(2,6)^"\n") in start_helper(nil,pop(pop(stack)),char) end 
 
+                    | "<strong>" => em_opening(temp,pop(stack),char :: nil) 
+                    | "<u>" => (if char = #"_" then underline([],pop(stack),#" "::nil) 
+                                else underline([],pop(stack),char::nil)) 
+                    | _ => start_helper(temp, pop(stack),char) end )
             | _ =>  (let val callee = head(tl(stack)) val o2 = write(implode(rev(actual))) ; val o3 = write("</em>") 
                     in case callee of 
                       "<h1>" => heading(char::nil,pop(stack),1,true) | "<h2>" => heading(char::nil,pop(stack),2,true) |"<h3>" => heading(char::nil,pop(stack),3,true) 
@@ -382,12 +461,12 @@ and underline_closing(temp,stack, actual) =  let
                     end )
             | #"\n"  => (let val o1 = write(implode(rev(actual))) ; val o2 = write("</u>"); val callee = head(tl(stack));  
                      in case callee of 
-                     "<h1>" => (let val o1 = write(getheading(2,1)) in start([],pop(pop(stack))) end)
-                    | "<h2>" => (let val o1 = write(getheading(2,2)) in start([],pop(pop(stack))) end)
-                    | "<h3>" => (let val o1 = write(getheading(2,3)) in start([],pop(pop(stack))) end)
-                    | "<h4>" => (let val o1 = write(getheading(2,4)) in start([],pop(pop(stack))) end)
-                    | "<h5>" => (let val o1 = write(getheading(2,5)) in start([],pop(pop(stack))) end)
-                    | "<h6>" => (let val o1 = write(getheading(2,6)) in start([],pop(pop(stack))) end)
+                     "<h1>" => (let val o1 = write(getheading(2,1)) in start_helper([],pop(pop(stack)),char) end)
+                    | "<h2>" => (let val o1 = write(getheading(2,2)) in start_helper([],pop(pop(stack)),char) end)
+                    | "<h3>" => (let val o1 = write(getheading(2,3)) in start_helper([],pop(pop(stack)),char) end)
+                    | "<h4>" => (let val o1 = write(getheading(2,4)) in start_helper([],pop(pop(stack)),char) end)
+                    | "<h5>" => (let val o1 = write(getheading(2,5)) in start_helper([],pop(pop(stack)),char) end)
+                    | "<h6>" => (let val o1 = write(getheading(2,6)) in start_helper([],pop(pop(stack)),char) end)
 
                     | "<strong>" => strong_opening(temp,pop(stack),char::nil) 
                     | "<em>" => em_opening(temp,pop(stack),char::nil)     
@@ -402,6 +481,64 @@ and underline_closing(temp,stack, actual) =  let
     end 
 
 
+and unordered_list_check(temp,stack) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then raise list_error 
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of   
+            #" " => (let val o1 = write("<ul>") ;  in 
+                    unordered_list_item([],"<ul>" :: stack) end ) 
+        |   #"\n" => start_helper(#"-" :: temp,stack,char) 
+        |   _ => start(#"-" :: char :: temp, stack) 
+            end 
+    end 
+
+and unordered_list_item_generator(temp,stack)  = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then raise list_error 
+        else 
+            let val char = Option.getOpt(option,#"%") ;
+            in case char of  
+           #" " =>  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); in 
+                        unordered_list_item([],stack) end )
+        |   _ => unordered_list_item(char::(#"-")::(#"\n")::temp,stack) 
+        end 
+    end            
+
+and  unordered_list_item_check(temp,stack) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ul>\n")  
+                    in start([],pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #"\n" => (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ul>\n")  
+                    in start_helper([],pop(stack),char) end ) 
+        |   #"-" => unordered_list_item_generator(temp,stack) 
+        |   _ => unordered_list_item(char::(#"\n")::temp,stack)
+            end 
+    end  
+            
+
+
+and unordered_list_item(temp,stack) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then raise list_error 
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of  
+            #"\n" => unordered_list_item_check(temp,stack) 
+        |   _ => unordered_list_item(char :: temp,stack) 
+            end 
+    end 
+
+
+
 
 
 
@@ -409,4 +546,6 @@ and underline_closing(temp,stack, actual) =  let
 in  
 fun convert() = start([],[]) ; 
 end 
+
+
 
