@@ -118,6 +118,26 @@ and newline_starting_tags(temp,stack,occured) = let
                                                     end 
                                 else unordered_list_check([],stack) 
                             end)
+                | #"1" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"2" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"3" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"4" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"5" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"6" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"7" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"8" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"9" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
+                | #"0" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end  else ordered_list_check_dot(char::[],stack) end)
+
+
+                
+                
+                
+                
+                
+                
+                
+                
                 | #"\n" => if (occured = true) then newline_starting_tags(temp,stack,occured)  
                             else newline_starting_tags(temp,stack,true) 
                 | _ => if (occured = true) then (if head(stack) = "<p>" then  
@@ -488,8 +508,17 @@ and unordered_list_check(temp,stack) = let
         else 
             let val char = Option.getOpt(option,#"%") 
             in case char of   
-            #" " => (let val o1 = write("<ul>") ;  in 
-                    unordered_list_item([],"<ul>" :: stack) end ) 
+            #" " => (if (head(stack) = "<p>") then 
+                    let val o2 = write(implode(rev(temp))) ; 
+                        val o1 = write("</p>\n");
+                        val o1 = write("<ul>") ;  in 
+                    unordered_list_item([],"<ul>" :: stack) 
+                    end 
+                    else   
+                    let 
+                        val o1 = write("<ul>") ;  in 
+                    unordered_list_item([],"<ul>" :: stack) 
+                    end ) 
         |   #"\n" => start_helper(#"-" :: temp,stack,char) 
         |   _ => start(#"-" :: char :: temp, stack) 
             end 
@@ -518,13 +547,13 @@ and  unordered_list_item_check(temp,stack) = let
             in case char of 
             #"\n" => (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ul>\n")  
                     in start_helper([],pop(stack),char) end ) 
+        |  #"#" => (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ul>\n")  
+                    in heading([],pop(stack),1,false) end )
         |   #"-" => unordered_list_item_generator(temp,stack) 
         |   _ => unordered_list_item(char::(#"\n")::temp,stack)
             end 
     end  
             
-
-
 and unordered_list_item(temp,stack) = let 
         val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
     in 
@@ -533,15 +562,101 @@ and unordered_list_item(temp,stack) = let
             let val char = Option.getOpt(option,#"%") 
             in case char of  
             #"\n" => unordered_list_item_check(temp,stack) 
+        
         |   _ => unordered_list_item(char :: temp,stack) 
             end 
     end 
 
 
 
+and ordered_list_check_dot(temp,stack) =  let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then start(temp,stack)  
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of  
+            #"." => ordered_list_check_space(temp,stack)  
+        |   _ => start(char::temp,stack) 
+            end             
+    end 
+and ordered_list_check_space(temp,stack) =  let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then start((#".") :: temp,stack)  
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of  
+            #" " => (let val o1 = write(implode(rev(tl(temp)))) ; val o2 = write("\n<ol>") ;in 
+                    ordered_list([],"<ol>" :: stack) 
+                    end)   
+            | _ => start(char::temp,stack)  
+            end             
+    end 
 
+and ordered_list(temp,stack) =  let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then   (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start([],pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of  
+            #"\n" => ordered_list_item_check(temp,stack) 
+        
+        |   _ => ordered_list(char :: temp,stack) 
+            end 
+    end 
 
+and ordered_list_item_check(temp,stack) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start([],pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #"\n" => (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start_helper([],pop(stack),char) end ) 
+        |  #"#" => (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in heading([],pop(stack),1,false) end )
+        |   #"1" => ordered_list_item_generator_dot(char::temp,stack)  |   #"2" => ordered_list_item_generator_dot(char::temp,stack)|   #"3" => ordered_list_item_generator_dot(char::temp,stack)|   #"4" => ordered_list_item_generator_dot(char::temp,stack)   |   #"5" => ordered_list_item_generator_dot(char::temp,stack) 
+        |   #"6" => ordered_list_item_generator_dot(char::temp,stack)  |   #"7" => ordered_list_item_generator_dot(char::temp,stack)|   #"8" => ordered_list_item_generator_dot(char::temp,stack)|   #"9" => ordered_list_item_generator_dot(char::temp,stack)   |   #"0" => ordered_list_item_generator_dot(char::temp,stack) 
 
+        |   _ => ordered_list(char::(#"\n")::temp,stack)
+            end 
+    end  
+
+(* temp has number also *)
+and ordered_list_item_generator_dot(temp,stack) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start(hd(temp)::nil,pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #"." => ordered_list_item_generator_space(temp,stack) 
+        |   _ =>  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start(char::(hd(temp))::nil,pop(stack)) end )
+            end 
+    end 
+
+and ordered_list_item_generator_space(temp,stack) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start((#".") :: hd(temp)::nil,pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #" " => (let val o1=write("\n<li>") ; val o2 = write(implode(rev(tl(temp)))); val o3 = write("</li>\n") ; 
+                    in  ordered_list([],stack) end )  
+        |   _ =>  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
+                    in start(char::(#".") :: hd(temp)::nil,pop(stack)) 
+                    end )
+            end 
+    end 
 
 in  
 fun convert() = start([],[]) ; 
