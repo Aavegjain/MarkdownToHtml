@@ -118,6 +118,7 @@ and newline_starting_tags(temp,stack,occured) = let
                                                     end 
                                 else unordered_list_check([],stack) 
                             end)
+                | #">" => blockquote_control([],push("<blockquote>",stack),1,0)
                 | #"1" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
                 | #"2" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
                 | #"3" => (let val h = head(stack) in if (h = "<p>") then let val o1 = write(implode(rev(temp))) ; val o2=write("</p>");   in ordered_list_check_dot(char::[],pop(stack)) end else ordered_list_check_dot(char::[],stack) end)
@@ -689,9 +690,6 @@ and ordered_list_item_generator_space(temp,stack) = let
             in case char of 
             #" " => (let  val o2 = write(implode(rev(tl(tl(temp))))); val o3 = write("</li>\n");val o1=write("<li>") ; 
                     in  ordered_list([],stack) end )  
-        (* |   _ =>  (let val o2 = write("<li>") ; val o1 = write(implode(rev(temp))); val o3 = write("</li>\n"); val o4 =write("</ol>\n")  
-                    in start(char::(#".") :: hd(temp)::nil,pop(stack)) 
-                    end ) *)
         |   #"*" => (let val o1 = write(implode(rev((#".")::temp))); in em_opening_check([],stack,[]) end ) 
         | #"_" => (let val o1 = write(implode(rev(#"."::temp))); val o2 = write("<u>");in underline([],push("<u>",stack),[]) end)  
 
@@ -699,6 +697,64 @@ and ordered_list_item_generator_space(temp,stack) = let
             end 
     end 
 
+and gen_blockquote(toggle,n) = if n = 0 then () else 
+                                                if toggle = 1 then (let val o1 = write("<blockquote>\n") in gen_blockquote(toggle,n-1) end )
+                                                else (let val o1 = write("</blockquote>\n") in gen_blockquote(toggle,n-1) end )
+
+and blockquote_control(temp,stack,curr,nested) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then (if head(stack) = "<p>" then let val o2 = write("</p>") ;val o1 = gen_blockquote(2,nested) in start([],pop(pop(stack))) end 
+                        else let val o1 = gen_blockquote(2,nested) in start([],pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #">" => blockquote_control(temp,stack,curr + 1, nested)  
+        |    #" " => blockquote_control(temp,stack,curr , nested)  
+        |   #"\n" => (if curr = nested then (if head(stack) = "<p>" then let val o1 = write("</p>\n") in blockquote_closing([],pop(stack),curr,nested) end
+                                              else blockquote_closing([],stack,curr,nested) )   
+                        else if curr < nested then if head(stack) = "<p>" then (let val o2 = write("</p>\n") ;val o1 = gen_blockquote(2,nested-curr);  in blockquote_closing([],pop(stack),curr,curr) end ) 
+                                                    else  (let val o1 = gen_blockquote(2,nested-curr);  in blockquote_closing([],stack,curr,curr) end )
+                        else if head(stack) = "<p>" then (let val o2 = write("</p>\n") ;val o1 = gen_blockquote(1,curr-nested);  in blockquote_closing([],pop(stack),curr,curr) end ) 
+                                                    else  (let val o1 = gen_blockquote(1,curr-nested);  in blockquote_closing([],stack,curr,curr) end ))
+        
+        |   _ => if curr <= nested then (if head(stack) = "<p>" then blockquote_text(char::[],stack,curr,nested) 
+                                        else (let val o1 = gen_blockquote(2,nested-curr) ; val o2 = write("<p>") ; in blockquote_text(char::[],push("<p>",stack),curr,curr) end))
+                  (* else if curr = nested then  if  head(stack) = "<p>" then blockquote_text(char::[],stack,curr,nested)
+                                              else  *)
+                  else (if head(stack) = "<p>" then let val o2 = write("</p>\n") ;val o1 = gen_blockquote(1,curr-nested); val o2 = write("<p>"); in blockquote_text(char::nil,stack,curr,curr) end   (* pop then push <p> *)
+                        else (let val o1 = gen_blockquote(1,curr-nested); val o2 = write("<p>"); in blockquote_text(char::nil,push("<p>",stack),curr,curr) end ))
+            end     
+    end 
+and blockquote_text(temp,stack,curr,nested) =  let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then (if head(stack) = "<p>" then let val o2 = write("</p>") ;val o1 = gen_blockquote(2,nested) in start([],pop(pop(stack))) end 
+                        else let val o1 = gen_blockquote(2,nested) in start([],pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+            #"\n" => (let val o1 = write(implode(rev((#"\n")::temp))) ; in blockquote_closing([],stack,curr,nested) end ) 
+        |   _ => blockquote_text(char::temp,stack,curr,nested)
+            end 
+    end 
+
+and blockquote_closing(temp,stack,curr,nested) = let 
+        val option = TextIO.input1(new_input) ;val test = Option.isSome(option) ; 
+    in 
+        if (not test) then  (if head(stack) = "<p>" then let val o2 = write("</p>") ;val o1 = gen_blockquote(2,nested) in start([],pop(pop(stack))) end 
+                        else let val o1 = gen_blockquote(2,nested) in start([],pop(stack)) end )
+        else 
+            let val char = Option.getOpt(option,#"%") 
+            in case char of 
+           
+           #">" => blockquote_control([],stack,1,nested) 
+        |   #" " => blockquote_closing(temp,stack,curr,nested)
+        |   _    => (if head(stack) = "<p>" then let val o2 = write("</p>") ;  val o1 = gen_blockquote(2,nested) in start_helper([],pop(pop(stack)),char) end 
+                        else let val o1 = gen_blockquote(2,nested) in start_helper([],pop(stack),char) end ) 
+            end 
+    end      
+            
 in  
 fun convert() = start([],[]) ; 
 end 
