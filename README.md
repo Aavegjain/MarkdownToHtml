@@ -1,5 +1,5 @@
 # Design decisions
-(for the problem statement check the HTML file attached)
+(for the problem statement and instructions to use check the HTML file attached)
 1. newlines -- handled as in markdown ( 2 newlines terminate a p tag) 
 
 2. heading level more than 7 is a error 
